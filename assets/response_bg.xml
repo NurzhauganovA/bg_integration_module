@@ -1,0 +1,136 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	<soap:Body>
+		<SendMessageResponse xmlns="http://bip.bee.kz/SyncChannel/v10/Types">
+			<response xmlns="">
+				<responseInfo>
+					<messageId>string</messageId>
+					<responseDate>2020-08-28T17:18:15.4172538+06:00</responseDate>
+					<status>
+						<code>SCSS001</code>
+						<message>Message has been processed successfully</message>
+					</status>
+					<sessionId>string</sessionId>
+				</responseInfo>
+				<responseData>
+					<ns4:data xmlns:ns4="http://bip.bee.kz/SyncChannel/v10/Interfaces" xmlns:cs="http://bg.kz/searchReferrals" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="cs:ReferralList" xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+                     <referralItem>
+                        <addiditonalInformation>С  МАМОЙ</addiditonalInformation>
+                        <address>РЕСПУБЛИКА: Казахстан , ОБЛАСТЬ: Алматинская , РАЙОН: Ескельдинский , СЕЛЬСКИЙ ОКРУГ: Карабулакский , ПОСЕЛОК: Карабулак , УЛИЦА: Ш.Айманова , ДОМ: 36/1</address>
+                        <bedProfile>
+                           <beginDate i:nil="true"></beginDate>
+                           <code>072</code>
+                           <endDate i:nil="true"></endDate>
+                           <id>83</id>
+                           <idCode>8300</idCode>
+                           <name>Для восстановительного лечения и медицинской реабилитации: общие для детей</name>
+                        </bedProfile>
+                        <benefitType>
+                           <beginDate i:nil="true"></beginDate>
+                           <code>2700</code>
+                           <endDate i:nil="true"></endDate>
+                           <id>27</id>
+                           <idCode>2700</idCode>
+                           <name>Нет льгот</name>
+                        </benefitType>
+                        <cardNumber>2007</cardNumber>
+                        <currentPlanDate>2020-01-27T09:53:00</currentPlanDate>
+                        <dayHospitalType i:nil="true"></dayHospitalType>
+                        <directDoctor>Өміржан АРИНА ФРАНЦЕВНА</directDoctor>
+                        <finSrcParent i:nil="true"></finSrcParent>
+                        <fsmsStatus i:nil="true"></fsmsStatus>
+                        <hasConfirm>true</hasConfirm>
+                        <hasFiles>false</hasFiles>
+                        <hasRefusal>false</hasRefusal>
+                        <hasRehabilitationFiles>false</hasRehabilitationFiles>
+                        <hospitalCode>23.22ND.072.13Q</hospitalCode>
+                        <hospitalDate>2020-01-27T09:53:00</hospitalDate>
+                        <hospitalNoticeStatuses>100</hospitalNoticeStatuses>
+                        <hospitalPlanDate>2020-01-27T09:53:00</hospitalPlanDate>
+                        <id>6800000006671308</id>
+                        <inPatientHelpType i:nil="true"></inPatientHelpType>
+                        <orgHealthCareDirect>
+                           <code>04A3</code>
+                           <funcStructureOrgID/>
+                           <name>Государственное учреждение "Управление Здравоохранения Атырауской области"</name>
+                           <orgHealthCareID>23600000000000004</orgHealthCareID>
+                        </orgHealthCareDirect>
+                        <orgHealthCareRef>
+                           <code>22ND</code>
+                           <funcStructureOrgID/>
+                           <name>Корпоративный Фонд «University Medical Center»/Национальный центр детской реабилитации</name>
+                           <orgHealthCareID>200000000000119</orgHealthCareID>
+                        </orgHealthCareRef>
+                        <orgHealthCareRequest>
+                           <code>0182</code>
+                           <funcStructureOrgID/>
+                           <name>Коммунальное государственное предприятие на праве хозяйственного ведения "Курмангазинская районная больница" Управления здравоохранения Атырауской области"</name>
+                           <orgHealthCareID>43</orgHealthCareID>
+                        </orgHealthCareRequest>
+                        <outDate>2018-01-25T09:56:14</outDate>
+                        <patient>
+                           <birthDate>2007-02-10T00:00:00</birthDate>
+                           <citizenIdCode>108500</citizenIdCode>
+                           <firstName>АЙЖАН</firstName>
+                           <hGBD i:nil="true"></hGBD>
+                           <id>6800000002395047</id>
+                           <lastName>СЛОБОДЕНЮК</lastName>
+                           <nationalityIdCode i:nil="true"></nationalityIdCode>
+                           <personFullName>СЛОБОДЕНЮК АЙЖАН</personFullName>
+                           <personin>070210653849</personin>
+						   <rpnID>15300000007098025</rpnID>
+                           <secondName/>
+                           <sexIdCode>200</sexIdCode>
+                           <unknownPerson i:nil="true"></unknownPerson>
+                        </patient>
+                        <polyclinicPlanDate>2020-01-27T17:00:00</polyclinicPlanDate>
+                        <protocolDate>2018-01-25T00:00:00</protocolDate>
+                        <protocolNumber>7</protocolNumber>
+                        <referralTarget>
+                           <beginDate i:nil="true"></beginDate>
+                           <code>600</code>
+                           <endDate i:nil="true"></endDate>
+                           <id>6</id>
+                           <idCode>600</idCode>
+                           <name>Восстановительное лечение</name>
+                        </referralTarget>
+                        <referralType>
+                           <beginDate i:nil="true"></beginDate>
+                           <code>800</code>
+                           <endDate i:nil="true"></endDate>
+                           <id>8</id>
+                           <idCode>800</idCode>
+                           <name>Направление на восстановительное лечение УЗ</name>
+                        </referralType>
+                        <refusalRegDate i:nil="true"></refusalRegDate>
+                        <refuseJustification i:nil="true"></refuseJustification>
+                        <refuseReason>
+                           <beginDate i:nil="true"></beginDate>
+                           <code i:nil="true"></code>
+                           <endDate i:nil="true"></endDate>
+                           <id>0</id>
+                           <idCode i:nil="true"></idCode>
+                           <name i:nil="true"></name>
+                        </refuseReason>
+                        <regDate>2020-01-27T09:53:00</regDate>
+                        <rehabilitationType>
+                           <code>200</code>
+                           <id>2</id>
+                           <idCode>200</idCode>
+                        </rehabilitationType>
+                        <sick>
+                           <beginDate i:nil="true"></beginDate>
+                           <code>G80.1</code>
+                           <endDate i:nil="true"></endDate>
+                           <id>3146</id>
+                           <idCode>G801</idCode>
+                           <name>Спастическая диплегия</name>
+                        </sick>
+                        <workPlace i:nil="true"></workPlace>
+				
+                     </referralItem>
+					</ns4:data>
+				</responseData>
+			</response>
+		</SendMessageResponse>
+	</soap:Body>
+</soap:Envelope>

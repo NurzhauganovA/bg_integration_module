@@ -1,0 +1,116 @@
+[
+    {
+        'addiditonalInformation': 'С  МАМОЙ',
+        'address': 'РЕСПУБЛИКА: Казахстан , ОБЛАСТЬ: Алматинская , РАЙОН: Ескельдинский , СЕЛЬСКИЙ ОКРУГ: Карабулакский , ПОСЕЛОК: Карабулак , УЛИЦА: Ш.Айманова , ДОМ: 36/1',
+        'bedProfile': {
+            'beginDate': None,
+            'code': '072',
+            'endDate': None,
+            'id': '83',
+            'idCode': '8300',
+            'name': 'Для восстановительного лечения и медицинской реабилитации: общие для детей'
+        },
+        'benefitType': {
+            'beginDate': None,
+            'code': '2700',
+            'endDate': None,
+            'id': '27',
+            'idCode': '2700',
+            'name': 'Нет льгот'
+        },
+        'cardNumber': '2007',
+        'currentPlanDate': '2020-01-27T09:53:00',
+        'dayHospitalType': None,
+        'directDoctor': 'Өміржан АРИНА ФРАНЦЕВНА',
+        'finSrcParent': None,
+        'fsmsStatus': None,
+        'hasConfirm': 'true',
+        'hasFiles': 'false',
+        'hasRefusal': 'false',
+        'hasRehabilitationFiles': 'false',
+        'hospitalCode': '23.22ND.072.13Q',
+        'hospitalDate': '2020-01-27T09:53:00',
+        'hospitalNoticeStatuses': '100',
+        'hospitalPlanDate': '2020-01-27T09:53:00',
+        'id': '6800000006671308',
+        'inPatientHelpType': None,
+        'orgHealthCareDirect': {
+            'code': '04A3',
+            'funcStructureOrgID': None,
+            'name': 'Государственное учреждение "Управление Здравоохранения Атырауской области"',
+            'orgHealthCareID': '23600000000000004'
+        },
+        'orgHealthCareRef': {
+            'code': '22ND',
+            'funcStructureOrgID': None,
+            'name': 'Корпоративный Фонд «University Medical Center»/Национальный центр детской реабилитации',
+            'orgHealthCareID': '200000000000119'
+        },
+        'orgHealthCareRequest': {
+            'code': '0182',
+            'funcStructureOrgID': None,
+            'name': 'Коммунальное государственное предприятие на праве хозяйственного ведения "Курмангазинская районная больница" Управления здравоохранения Атырауской области"',
+            'orgHealthCareID': '43'
+        },
+        'outDate': '2018-01-25T09:56:14',
+        'patient': {
+            'birthDate': '2007-02-10T00:00:00',
+            'citizenIdCode': '108500',
+            'firstName': 'АЙЖАН',
+            'hGBD': None,
+            'id': '6800000002395047',
+            'lastName': 'СЛОБОДЕНЮК',
+            'nationalityIdCode': None,
+            'personFullName': 'СЛОБОДЕНЮК АЙЖАН',
+            'personin': '070210653849',
+            'rpnID': '15300000007098025',
+            'secondName': None,
+            'sexIdCode': '200',
+            'unknownPerson': None
+        },
+        'polyclinicPlanDate': '2020-01-27T17:00:00',
+        'protocolDate': '2018-01-25T00:00:00',
+        'protocolNumber': '7',
+        'referralTarget': {
+            'beginDate': None,
+            'code': '600',
+            'endDate': None,
+            'id': '6',
+            'idCode': '600',
+            'name': 'Восстановительное лечение'
+        },
+        'referralType': {
+            'beginDate': None,
+            'code': '800',
+            'endDate': None,
+            'id': '8',
+            'idCode': '800',
+            'name': 'Направление на восстановительное лечение УЗ'
+        },
+        'refusalRegDate': None,
+        'refuseJustification': None,
+        'refuseReason': {
+            'beginDate': None,
+            'code': None,
+            'endDate': None,
+            'id': '0',
+            'idCode': None,
+            'name': None
+        },
+        'regDate': '2020-01-27T09:53:00',
+        'rehabilitationType': {
+            'code': '200',
+            'id': '2',
+            'idCode': '200'
+        },
+        'sick': {
+            'beginDate': None,
+            'code': 'G80.1',
+            'endDate': None,
+            'id': '3146',
+            'idCode': 'G801',
+            'name': 'Спастическая диплегия'
+        },
+        'workPlace': None
+    }
+]
