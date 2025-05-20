@@ -13,15 +13,19 @@ class BGReferralsParser(AbstractParser):
         if not data_to_parse:
             raise SubjectNotFoundError("Пустой ответ от БГ")
 
-        xml_utils = XMLUtilsMixin()
-        root = xml_utils.parse_xml(data_to_parse)
-
-        items = root.findall(".//referralItem")
-        if not items:
-            raise SubjectNotFoundError("Не найдено направлений в ответе БГ")
-
-        parsed_items = [xml_utils.element_to_dict(item) for item in items]
+        root = XMLUtilsMixin().parse_xml(data_to_parse)
+        items = root.findall(".//referralList/referralItem")
 
         return {
-            "referralItems": parsed_items
+            "referralItems": [
+                {
+                    "iin": item.findtext("patient/personin"),
+                    "full_name": item.findtext("patient/personFullName"),
+                    "hospital": item.findtext("orgHealthCareRef/name"),
+                    "doctor": item.findtext("directDoctor"),
+                    "diagnosis": item.findtext("sick/name"),
+                    "referral_type": item.findtext("referralType/name")
+                }
+                for item in items
+            ]
         }

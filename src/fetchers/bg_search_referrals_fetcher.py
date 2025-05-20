@@ -1,7 +1,5 @@
 from integration_sdk_orkendeu_mis.fetchers.sync_soap import SyncSOAPFetcher
-from typing import Dict, Any
-
-from settings import USE_MOCK
+from typing import Dict
 
 
 class BGReferralsFetcher(SyncSOAPFetcher):
@@ -9,16 +7,8 @@ class BGReferralsFetcher(SyncSOAPFetcher):
     content_type = "text/xml"
 
     def __init__(self):
-        self.url = "http://127.0.0.1:8008/"
+        self.url = "http://127.0.0.1:8010/"
         super().__init__(url=self.url)
-
-    async def fetch(self, validated_data: Dict[str, Any], **kwargs: Any) -> bytes:
-        print("USE_MOCK", USE_MOCK)
-        if USE_MOCK:
-            with open("assets/response_bg.xml", "rb") as file:
-               return file.read()
-
-        return await super().fetch(validated_data, **kwargs)
 
     def build_payload(self, validated_data: Dict) -> str:
         return f"""<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
@@ -49,12 +39,3 @@ class BGReferralsFetcher(SyncSOAPFetcher):
                         </SendMessage>
                     </soap:Body>
                 </soap:Envelope>"""
-
-
-class BGReferralsFetcherMock(BGReferralsFetcher):
-    """
-    Mock class for BGReferralsFetcher.
-    """
-    def fetch(self, validated_data: Dict[str, Any], **kwargs: Any) -> bytes:
-        with open("assets/response_bg.xml", "rb") as file:
-            return file.read()

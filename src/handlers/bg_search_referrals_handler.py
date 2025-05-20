@@ -9,7 +9,7 @@ from data_subjects.bg_search_referrals_subject import BGReferralsSubject
 
 class BGReferralsHandler(AbstractServiceHandler, TraceLoggingMixin):
     """
-    Обработчик для поиска направлений пациента в БГ.с
+    Обработчик для поиска направлений пациента в БГ.
     """
 
     fetcher_class = BGReferralsFetcher
