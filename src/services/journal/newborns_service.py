@@ -1,13 +1,16 @@
-from datetime import datetime
-from typing import Dict, Any, List
 import re
+from datetime import datetime
+from typing import Dict, Any
 
 from services.journal_base_service import JournalBaseService
 from data_subjects.responses.newborns_response import (
-    NewbornResponse, NewbornAsset, NewbornPatient,
-    NewbornStatusColor, NewbornAdditionalInfo, Mother
+    NewbornResponse, NewbornAsset, NewbornPatient, NewbornStatusColor, Mother
 )
 from data_subjects.requests.newborns_request import NewbornFilter
+from data_subjects.enums.service_enums import (
+    StatusColor, ContactInfo, PhonePattern, DefaultValues
+)
+from tests.constants import HOSPITAL_NAME, NEWBORN_MAX_AGE_DAYS
 
 
 class NewbornsService(JournalBaseService[NewbornResponse, NewbornFilter]):
@@ -15,52 +18,13 @@ class NewbornsService(JournalBaseService[NewbornResponse, NewbornFilter]):
 
     @classmethod
     def _transform_data(cls, data: Dict[str, Any], filter_params: NewbornFilter) -> NewbornResponse:
-        """
-        Преобразование данных БГ в формат данных новорожденных.
-
-        :param data: Данные БГ
-        :param filter_params: Параметры фильтрации
-        :return: Ответ с данными новорожденных
-        """
-        hospital_name = "Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау"
+        """Преобразование данных БГ в формат данных новорожденных."""
         items = []
-
-        # Получаем элементы направлений из ответа
         referral_items = data.get("referralItems", [])
-
-        # Применяем фильтрацию
         filtered_items = cls._apply_filter(referral_items, filter_params)
 
         for item in filtered_items:
-            # Создаем объект пациента
             patient_data = item.get("patient", {})
-
-            # Извлекаем дополнительную информацию
-            additional_info = item.get("addiditonalInformation", "")
-
-            # Информация о матери (пытаемся найти в дополнительной информации)
-            mother_name = "Не указано"
-            if "мать" in additional_info.lower():
-                # Попытка извлечь имя матери после слова "мать"
-                mother_match = re.search(r'мать:?\s*([\w\s]+)', additional_info, re.IGNORECASE)
-                if mother_match:
-                    mother_name = mother_match.group(1).strip()
-
-            # Создаем объект матери
-            mother = Mother(
-                id=None,
-                iin=None,
-                full_name=mother_name,
-                birth_date=None
-            )
-
-            # Извлекаем телефон
-            phone_number = None
-            phone_match = re.search(r'\+?[78][\d\s-]{10,}', additional_info)
-            if phone_match:
-                phone_number = phone_match.group(0)
-
-            # Создаем объект пациента
             patient = NewbornPatient(
                 id=patient_data.get("id", ""),
                 iin=patient_data.get("personin", ""),
@@ -68,37 +32,27 @@ class NewbornsService(JournalBaseService[NewbornResponse, NewbornFilter]):
                 birth_date=patient_data.get("birthDate", "")
             )
 
-            # Формируем дополнительную информацию
-            additional_info_dict = {
-                "executor": "Иванов Алексей Викторович",  # Пример данных
-                "diagnosis": f"{item.get('sick', {}).get('code', '')} {item.get('sick', {}).get('name', '')}",
-                "mother": mother,
-                "phone": phone_number or "+7 707 888 56 78",  # Пример данных, если не найдено
-                "department": f"№{item.get('bedProfile', {}).get('code', '5')}"
-            }
+            mother = cls._extract_mother_info(item.get("addiditonalInformation", ""))
+            phone_number = cls._extract_phone_number(item.get("addiditonalInformation", ""))
+            additional_info = cls._build_additional_info(item, mother, phone_number)
 
-            # Создаем актив
             asset = NewbornAsset(
                 id=item.get("id", ""),
                 number=item.get("protocolNumber", ""),
                 receipt_date=item.get("regDate", ""),
                 patient=patient,
-                status_color=NewbornStatusColor.GREEN,
-                additional_info=additional_info_dict
+                status_color=NewbornStatusColor.GREEN,  # Все новорожденные - зеленые (активные)
+                additional_info=additional_info
             )
-
             items.append(asset)
 
-        # Применяем сортировку
         sorted_items = cls._apply_sort(items, filter_params.sort_by)
-
-        # Применяем пагинацию
         paginated_items, total_pages = cls._apply_pagination(
             sorted_items, filter_params.page, filter_params.limit
         )
 
         return NewbornResponse(
-            hospital_name=hospital_name,
+            hospital_name=HOSPITAL_NAME,
             items=paginated_items,
             total=len(items),
             page=filter_params.page,
@@ -107,110 +61,91 @@ class NewbornsService(JournalBaseService[NewbornResponse, NewbornFilter]):
         )
 
     @classmethod
+    def _extract_mother_info(cls, additional_info: str) -> Mother:
+        """Извлечение информации о матери из дополнительной информации."""
+        mother_name = DefaultValues.MOTHER_NAME.value
+
+        if additional_info:
+            mother_match = re.search(PhonePattern.MOTHER_REGEX.value, additional_info, re.IGNORECASE)
+            if mother_match:
+                mother_name = mother_match.group(1).strip()
+
+        return Mother(
+            id=None,
+            iin=None,
+            full_name=mother_name,
+            birth_date=None
+        )
+
+    @classmethod
+    def _build_additional_info(cls, item: Dict[str, Any], mother: Mother, phone_number: str) -> Dict[str, Any]:
+        """Построение дополнительной информации для актива."""
+        sick_data = item.get("sick", {})
+        bed_profile = item.get("bedProfile", {})
+
+        return {
+            "executor": ContactInfo.DEFAULT_EXECUTOR.value,
+            "diagnosis": cls._format_diagnosis(sick_data),
+            "mother": mother,
+            "phone": phone_number,
+            "department": cls._format_department(bed_profile.get('code', ''))
+        }
+
+    @classmethod
     def _apply_filter(cls, items: list, filter_params: NewbornFilter) -> list:
-        """
-        Применение фильтров к списку элементов.
-
-        :param items: Список элементов
-        :param filter_params: Параметры фильтрации
-        :return: Отфильтрованный список элементов
-        """
+        """Применение фильтров к списку элементов."""
         filtered_items = []
-
         date_from = datetime.strptime(filter_params.date_from, "%Y-%m-%d")
         date_to = datetime.strptime(filter_params.date_to, "%Y-%m-%d")
 
         for item in items:
-            # Получаем дату регистрации
-            reg_date_str = item.get("regDate", "")
-            if not reg_date_str:
+            if not cls._is_date_in_range(item.get("regDate", ""), date_from, date_to):
                 continue
-
-            try:
-                reg_date = datetime.strptime(reg_date_str.split("T")[0], "%Y-%m-%d")
-            except ValueError:
+            if not cls._is_patient_match_extended(item, filter_params.patient_identifier):
                 continue
-
-            # Проверяем, входит ли дата в диапазон
-            if reg_date < date_from or reg_date > date_to:
+            if not cls._is_department_match(item, filter_params.department):
                 continue
-
-            # Фильтрация по пациенту (новорожденному)
-            patient_data = item.get("patient", {})
-            patient_iin = patient_data.get("personin", "")
-            patient_name = patient_data.get("personFullName", "").lower()
-
-            # Также проверяем дополнительную информацию на наличие имени матери
-            additional_info = item.get("addiditonalInformation", "").lower()
-
-            if filter_params.patient_identifier and filter_params.patient_identifier.lower() not in patient_name and filter_params.patient_identifier != patient_iin and filter_params.patient_identifier.lower() not in additional_info:
+            if not cls._is_status_match(item, filter_params.status):
                 continue
-
-            # Фильтрация по департаменту
-            department = item.get("bedProfile", {}).get("code", "")
-            if filter_params.department and filter_params.department != "all" and department != filter_params.department:
-                continue
-
-            # Фильтрация по статусу (активный/выписан)
-            if filter_params.status and filter_params.status != NewbornFilter.ALL:
-                out_date = item.get("outDate")
-
-                if filter_params.status == NewbornFilter.DISCHARGED and not out_date:
-                    continue
-                elif filter_params.status == NewbornFilter.ACTIVE and out_date:
-                    continue
 
             filtered_items.append(item)
-
         return filtered_items
 
     @classmethod
-    def _apply_sort(cls, items: list, sort_by: str) -> list:
-        """
-        Применение сортировки к списку элементов.
+    def _is_status_match(cls, item: Dict[str, Any], status) -> bool:
+        """Проверка соответствия статуса фильтру."""
+        if not status or status.value == "all":
+            return True
 
-        :param items: Список элементов
-        :param sort_by: Поле для сортировки
-        :return: Отсортированный список элементов
-        """
-        if sort_by == "date_asc":
-            return sorted(items, key=lambda x: x.receipt_date)
-        elif sort_by == "date_desc":
-            return sorted(items, key=lambda x: x.receipt_date, reverse=True)
-        elif sort_by == "patient_name_asc":
-            return sorted(items, key=lambda x: x.patient.full_name)
-        elif sort_by == "patient_name_desc":
-            return sorted(items, key=lambda x: x.patient.full_name, reverse=True)
+        out_date = item.get("outDate")
 
-        return items
+        if status.value == "discharged":
+            return bool(out_date)
+        elif status.value == "active":
+            return not out_date
+
+        return True
 
     @classmethod
-    def _apply_pagination(cls, items: list, page: int, limit: int) -> tuple:
-        """
-        Применение пагинации к списку элементов.
+    def _is_newborn_by_age(cls, birth_date: str) -> bool:
+        """Проверка, является ли пациент новорожденным по возрасту."""
+        if not birth_date:
+            return False
 
-        :param items: Список элементов
-        :param page: Номер страницы
-        :param limit: Количество элементов на странице
-        :return: Кортеж из списка элементов на странице и общего количества страниц
-        """
-        total_pages = (len(items) + limit - 1) // limit
+        try:
+            birth_date_obj = datetime.strptime(birth_date.split("T")[0], "%Y-%m-%d")
+            current_date = datetime.now()
 
-        start_idx = (page - 1) * limit
-        end_idx = start_idx + limit
-
-        return items[start_idx:end_idx], total_pages
+            age_in_days = (current_date - birth_date_obj).days
+            return age_in_days <= NEWBORN_MAX_AGE_DAYS
+        except (ValueError, TypeError):
+            return False
 
     @classmethod
     def _get_empty_response(cls, filter_params: NewbornFilter) -> NewbornResponse:
-        """
-        Получение пустого ответа с данными новорожденных.
-
-        :param filter_params: Параметры фильтрации
-        :return: Пустой ответ с данными новорожденных
-        """
+        """Получение пустого ответа с данными новорожденных."""
         return NewbornResponse(
-            hospital_name="Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау",
+            hospital_name=HOSPITAL_NAME,
             items=[],
             total=0,
             page=filter_params.page,
