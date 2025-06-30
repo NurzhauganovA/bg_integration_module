@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bg-integration-module
+spec:
+  selector:
+    app: bg-integration-module
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8010
+  

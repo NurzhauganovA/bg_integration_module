@@ -4,6 +4,19 @@
 TEST_PATIENT_IIN = "070210653849"
 TEST_PATIENT_NAME = "СЛОБОДЕНЮК АЙЖАН"
 TEST_DEPARTMENT_CODE = "072"
+TEST_MOTHER_FULL_NAME = "УТЕПОВА АЛТЫНАЙ"
+
+# Тестовые данные диагнозов
+TEST_SICK_CODE = "G80.1"
+TEST_SICK_NAME = "Спастическая диплегия"
+
+# Тестовые данные дополнительной информации
+TEST_PHONE_NUMBER = "+77076098760"
+TEST_ADDRESS = "г. Алматы мкр. Алмагуль 3 кв. 15"
+TEST_DOCTOR_NAME = "Иванов И.И."
+TEST_EXECUTOR = "СМП"
+TEST_EXECUTOR_CODE = "СМП"
+TEST_EXECUTOR_NAME = "Служба медицинского персонала"
 
 # Тестовые даты
 TEST_DATE_FROM = "2025-01-01"

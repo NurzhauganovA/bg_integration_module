@@ -1,0 +1,19 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bg-integration-module
+  annotations:
+    konghq.com/strip-path: "true"
+spec:
+  ingressClassName: kong
+  rules:
+    - host: api.dzhandosoft.kz
+      http:
+        paths:
+          - path: /bg-integration-module-orkendeu-project
+            pathType: Prefix
+            backend:
+              service:
+                name: bg-integration-module
+                port:
+                  number: 80

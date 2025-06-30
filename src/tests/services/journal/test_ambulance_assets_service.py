@@ -5,7 +5,9 @@ from datetime import datetime
 from services.journal.ambulance_assets_service import AmbulanceAssetsService
 from data_subjects.requests.ambulance_assets_request import AmbulanceFilter, AmbulanceStatus
 from data_subjects.responses.ambulance_assets_response import AmbulanceStatusColor
+from data_subjects.enums.service_enums import ContactInfo
 from integration_sdk_orkendeu_mis.handlers.dto.handler_result_dto import HandlerResultDTO
+from tests.constants import *
 
 
 class TestAmbulanceAssetsService:
@@ -20,16 +22,16 @@ class TestAmbulanceAssetsService:
         )
 
         filter_params = AmbulanceFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31",
-            patient_identifier="070210653849",
-            department="072",
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            patient_identifier=TEST_PATIENT_IIN,
+            department=TEST_DEPARTMENT_CODE,
             status=AmbulanceStatus.NEW
         )
 
         result = await AmbulanceAssetsService.get_data(filter_params)
 
-        assert result.hospital_name == "Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау"
+        assert result.hospital_name == HOSPITAL_NAME
         assert isinstance(result.items, list)
         assert result.page == filter_params.page
         assert result.limit == filter_params.limit
@@ -39,18 +41,18 @@ class TestAmbulanceAssetsService:
         """Проверка получения пустого ответа при отсутствии данных."""
         mock_journal_base_service.return_value = HandlerResultDTO(
             success=False,
-            error="No data found",
-            status_code=404
+            error=ERROR_NO_DATA_FOUND,
+            status_code=HTTP_NOT_FOUND
         )
 
         filter_params = AmbulanceFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO
         )
 
         result = await AmbulanceAssetsService.get_data(filter_params)
 
-        assert result.hospital_name == "Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау"
+        assert result.hospital_name == HOSPITAL_NAME
         assert result.items == []
         assert result.total == 0
         assert result.page == filter_params.page
@@ -60,8 +62,8 @@ class TestAmbulanceAssetsService:
     def test_transform_data(self, referrals_json_data):
         """Проверка преобразования данных из БГ в формат активов скорой помощи."""
         filter_params = AmbulanceFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO
         )
 
         result = AmbulanceAssetsService._transform_data(
@@ -69,7 +71,7 @@ class TestAmbulanceAssetsService:
             filter_params
         )
 
-        assert result.hospital_name.startswith("Коммунальное государственное предприятие")
+        assert result.hospital_name == HOSPITAL_NAME
         assert isinstance(result.items, list)
 
         if result.items:
@@ -80,13 +82,29 @@ class TestAmbulanceAssetsService:
             assert hasattr(item, "additional_info")
             assert item.status_color == AmbulanceStatusColor.GREEN
 
+    def test_build_additional_info(self):
+        """Проверка построения дополнительной информации для актива."""
+        item = {
+            "addiditonalInformation": f"{TEST_PHONE_NUMBER} дополнительная информация",
+            "bedProfile": {
+                "code": TEST_DEPARTMENT_CODE
+            }
+        }
+
+        phone_number = "+77076098760"
+        additional_info = AmbulanceAssetsService._build_additional_info(item, phone_number)
+
+        assert additional_info["phone"] == phone_number
+        assert additional_info["executor"] == ContactInfo.DEFAULT_EXECUTOR.value
+        assert additional_info["department"] == f"№{TEST_DEPARTMENT_CODE}"
+
     def test_apply_filter(self, referrals_json_data):
         """Проверка применения фильтра к списку элементов."""
         filter_params = AmbulanceFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31",
-            patient_identifier="070210653849",
-            department="072",
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            patient_identifier=TEST_PATIENT_IIN,
+            department=TEST_DEPARTMENT_CODE,
             status=AmbulanceStatus.ALL
         )
 
@@ -109,3 +127,21 @@ class TestAmbulanceAssetsService:
             if filter_params.department != "all":
                 department = item.get("bedProfile", {}).get("code", "")
                 assert department == filter_params.department
+
+    def test_get_empty_response(self):
+        """Проверка получения пустого ответа."""
+        filter_params = AmbulanceFilter(
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            page=TEST_PAGE_NUMBER,
+            limit=TEST_PAGE_SIZE
+        )
+
+        result = AmbulanceAssetsService._get_empty_response(filter_params)
+
+        assert result.hospital_name == HOSPITAL_NAME
+        assert result.items == []
+        assert result.total == 0
+        assert result.page == TEST_PAGE_NUMBER
+        assert result.limit == TEST_PAGE_SIZE
+        assert result.total_pages == 0

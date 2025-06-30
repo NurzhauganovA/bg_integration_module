@@ -340,14 +340,14 @@ files = [
 
 [[package]]
 name = "integration-sdk-orkendeu-mis"
-version = "0.1.4"
+version = "0.1.3"
 description = "Integration SDK for external service integration (eGov, SOAP, REST)"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "integration_sdk_orkendeu_mis-0.1.4-py3-none-any.whl", hash = "sha256:3648831b0c888131f826eadb783482495e0163d290ac162c2e83617fde3f80af"},
-    {file = "integration_sdk_orkendeu_mis-0.1.4.tar.gz", hash = "sha256:7ebcc305a39015b5468acf34aef9528d6b177b8fa24f5d012cf0d0c4c069ee5c"},
+    {file = "integration_sdk_orkendeu_mis-0.1.3-py3-none-any.whl", hash = "sha256:a0064fb8e63eb2fbffd24fdf378ff189ff49120fe15350256977ce3a8146c549"},
+    {file = "integration_sdk_orkendeu_mis-0.1.3.tar.gz", hash = "sha256:997b0fafd48b826aa4e403c6e7bc5669111f4a1961eb8af6323d26b0fc4b8b32"},
 ]
 
 [package.dependencies]
@@ -1041,4 +1041,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11"
-content-hash = "7688cb325b9eb103f471bc51533bbed5cdb35b9fa62edd38a8a67d1724350fe1"
+content-hash = "93251d63d4aef42e61d75e7a65cd7891ea84243e33b085fb453a2f70eb17e817"

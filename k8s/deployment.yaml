@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bg-integration-module-orkendeu-project
+  labels:
+    app: bg-integration-module
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bg-integration-module
+  template:
+    metadata:
+      name: bg-integration-module
+      labels:
+        app: bg-integration-module
+    spec:
+      containers:
+        - name: bg-integration-module
+          image: ${IMAGE}:${TAG}
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8010
+          envFrom:
+            - configMapRef:
+                name: bg-integration-module-config
+      restartPolicy: Always
+
+      

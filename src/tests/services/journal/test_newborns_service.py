@@ -6,7 +6,9 @@ import re
 from services.journal.newborns_service import NewbornsService
 from data_subjects.requests.newborns_request import NewbornFilter, NewbornStatus
 from data_subjects.responses.newborns_response import NewbornStatusColor
+from data_subjects.enums.service_enums import ContactInfo, PhonePattern, DefaultValues
 from integration_sdk_orkendeu_mis.handlers.dto.handler_result_dto import HandlerResultDTO
+from tests.constants import *
 
 
 class TestNewbornsService:
@@ -17,8 +19,8 @@ class TestNewbornsService:
         """Проверка успешного получения и преобразования данных."""
         for item in referrals_json_data:
             patient_data = item.get("patient", {})
-            patient_data["birthDate"] = "2025-01-01T00:00:00"
-            item["addiditonalInformation"] = "С МАМОЙ"
+            patient_data["birthDate"] = TEST_BIRTH_DATE
+            item["addiditonalInformation"] = MOTHER_INFO_MARKER
 
         mock_journal_base_service.return_value = HandlerResultDTO(
             success=True,
@@ -26,16 +28,16 @@ class TestNewbornsService:
         )
 
         filter_params = NewbornFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31",
-            patient_identifier="070210653849",
-            department="072",
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            patient_identifier=TEST_PATIENT_IIN,
+            department=TEST_DEPARTMENT_CODE,
             status=NewbornStatus.ACTIVE
         )
 
         result = await NewbornsService.get_data(filter_params)
 
-        assert result.hospital_name == "Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау"
+        assert result.hospital_name == HOSPITAL_NAME
         assert isinstance(result.items, list)
         assert result.page == filter_params.page
         assert result.limit == filter_params.limit
@@ -45,18 +47,18 @@ class TestNewbornsService:
         """Проверка получения пустого ответа при отсутствии данных."""
         mock_journal_base_service.return_value = HandlerResultDTO(
             success=False,
-            error="No data found",
-            status_code=404
+            error=ERROR_NO_DATA_FOUND,
+            status_code=HTTP_NOT_FOUND
         )
 
         filter_params = NewbornFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO
         )
 
         result = await NewbornsService.get_data(filter_params)
 
-        assert result.hospital_name == "Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау"
+        assert result.hospital_name == HOSPITAL_NAME
         assert result.items == []
         assert result.total == 0
         assert result.page == filter_params.page
@@ -66,15 +68,13 @@ class TestNewbornsService:
     def test_transform_data(self, referrals_json_data):
         """Проверка преобразования данных из БГ в формат данных новорожденных."""
         for item in referrals_json_data:
-            # Указываем дату рождения - недавнюю дату для новорожденного
             patient_data = item.get("patient", {})
-            patient_data["birthDate"] = "2025-01-01T00:00:00"
-            item["addiditonalInformation"] = "С МАМОЙ"
+            patient_data["birthDate"] = TEST_BIRTH_DATE
+            item["addiditonalInformation"] = MOTHER_INFO_MARKER
 
-        # Создаем фильтр
         filter_params = NewbornFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO
         )
 
         result = NewbornsService._transform_data(
@@ -82,7 +82,7 @@ class TestNewbornsService:
             filter_params
         )
 
-        assert result.hospital_name.startswith("Коммунальное государственное предприятие")
+        assert result.hospital_name == HOSPITAL_NAME
         assert isinstance(result.items, list)
 
         if result.items:
@@ -97,20 +97,99 @@ class TestNewbornsService:
             assert item.additional_info["mother"] is not None
             assert hasattr(item.additional_info["mother"], "full_name")
 
-            assert "Иванова Мария Петровна" == item.additional_info["mother"].full_name
+    def test_extract_mother_info(self):
+        """Проверка извлечения информации о матери."""
+        additional_info_with_mother = f"мать: {TEST_MOTHER_FULL_NAME} {TEST_PHONE_NUMBER}"
+        mother = NewbornsService._extract_mother_info(additional_info_with_mother)
+
+        assert mother.full_name == TEST_MOTHER_FULL_NAME
+        assert mother.id is None
+        assert mother.iin is None
+        assert mother.birth_date is None
+
+        additional_info_without_mother = "обычная информация"
+        mother = NewbornsService._extract_mother_info(additional_info_without_mother)
+
+        assert mother.full_name == DefaultValues.MOTHER_NAME.value
+
+        empty_info = ""
+        mother = NewbornsService._extract_mother_info(empty_info)
+
+        assert mother.full_name == DefaultValues.MOTHER_NAME.value
+
+    def test_build_additional_info(self):
+        """Проверка построения дополнительной информации для актива."""
+        from data_subjects.responses.newborns_response import Mother
+
+        item = {
+            "sick": {
+                "code": TEST_SICK_CODE,
+                "name": TEST_SICK_NAME
+            },
+            "bedProfile": {
+                "code": TEST_DEPARTMENT_CODE
+            }
+        }
+
+        mother = Mother(
+            id=None,
+            iin=None,
+            full_name=TEST_MOTHER_FULL_NAME,
+            birth_date=None
+        )
+
+        phone_number = TEST_PHONE_NUMBER
+
+        additional_info = NewbornsService._build_additional_info(item, mother, phone_number)
+
+        assert additional_info["executor"] == ContactInfo.DEFAULT_EXECUTOR.value
+        assert additional_info["diagnosis"] == f"{TEST_SICK_CODE} {TEST_SICK_NAME}"
+        assert additional_info["mother"] == mother
+        assert additional_info["phone"] == phone_number
+        assert additional_info["department"] == f"№{TEST_DEPARTMENT_CODE}"
+
+    def test_is_status_match(self):
+        """Проверка соответствия статуса фильтру."""
+        item_active = {"outDate": None}
+        assert NewbornsService._is_status_match(item_active, NewbornStatus.ALL)
+        assert NewbornsService._is_status_match(item_active, NewbornStatus.ACTIVE)
+        assert not NewbornsService._is_status_match(item_active, NewbornStatus.DISCHARGED)
+
+        item_discharged = {"outDate": TEST_OUT_DATE}
+        assert NewbornsService._is_status_match(item_discharged, NewbornStatus.ALL)
+        assert NewbornsService._is_status_match(item_discharged, NewbornStatus.DISCHARGED)
+        assert not NewbornsService._is_status_match(item_discharged, NewbornStatus.ACTIVE)
+
+    def test_is_newborn_by_age(self):
+        """Проверка определения новорожденного по возрасту."""
+        with patch('services.journal.newborns_service.datetime') as mock_datetime:
+            mock_datetime.now.return_value = datetime(2025, 1, 30)
+            mock_datetime.strptime.side_effect = lambda *args, **kwargs: datetime.strptime(*args, **kwargs)
+
+            recent_birth = "2025-01-01T00:00:00"
+            assert NewbornsService._is_newborn_by_age(recent_birth)
+
+            old_birth = "2025-12-31T00:00:00"
+            assert not NewbornsService._is_newborn_by_age(old_birth)
+
+            invalid_birth = "invalid-date"
+            assert not NewbornsService._is_newborn_by_age(invalid_birth)
+
+            empty_birth = ""
+            assert not NewbornsService._is_newborn_by_age(empty_birth)
 
     def test_apply_filter(self, referrals_json_data):
         """Проверка применения фильтра к списку элементов."""
         for item in referrals_json_data:
             patient_data = item.get("patient", {})
-            patient_data["birthDate"] = "2025-01-01T00:00:00"
-            item["addiditonalInformation"] = "С МАМОЙ"
+            patient_data["birthDate"] = TEST_BIRTH_DATE
+            item["addiditonalInformation"] = MOTHER_INFO_MARKER
 
         filter_params = NewbornFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31",
-            patient_identifier="070210653849",
-            department="072",
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            patient_identifier=TEST_PATIENT_IIN,
+            department=TEST_DEPARTMENT_CODE,
             status=NewbornStatus.ACTIVE
         )
 
@@ -139,3 +218,21 @@ class TestNewbornsService:
 
             if filter_params.status == NewbornStatus.ACTIVE:
                 assert "outDate" not in item or not item["outDate"]
+
+    def test_get_empty_response(self):
+        """Проверка получения пустого ответа."""
+        filter_params = NewbornFilter(
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            page=TEST_PAGE_NUMBER,
+            limit=TEST_PAGE_SIZE
+        )
+
+        result = NewbornsService._get_empty_response(filter_params)
+
+        assert result.hospital_name == HOSPITAL_NAME
+        assert result.items == []
+        assert result.total == 0
+        assert result.page == TEST_PAGE_NUMBER
+        assert result.limit == TEST_PAGE_SIZE
+        assert result.total_pages == 0

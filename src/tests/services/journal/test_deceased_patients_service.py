@@ -5,7 +5,11 @@ from datetime import datetime
 from services.journal.deceased_patients_service import DeceasedPatientsService
 from data_subjects.requests.deceased_patients_request import DeceasedFilter
 from data_subjects.responses.deceased_patients_response import DeceasedStatusColor
+from data_subjects.enums.service_enums import (
+    ContactInfo, MedicalPersonnel, TreatmentOutcome, DischargeOutcome, DeathMarker
+)
 from integration_sdk_orkendeu_mis.handlers.dto.handler_result_dto import HandlerResultDTO
+from tests.constants import *
 
 
 class TestDeceasedPatientsService:
@@ -15,56 +19,48 @@ class TestDeceasedPatientsService:
     async def test_get_data_success(self, mock_journal_base_service, referrals_json_data):
         """Проверка успешного получения и преобразования данных."""
         for item in referrals_json_data:
-            item["addiditonalInformation"] = "смерть пациента"
-            item["outDate"] = "2025-01-10T15:30:00"
+            item["addiditonalInformation"] = DEATH_MARKER
+            item["outDate"] = TEST_OUT_DATE
 
         mock_journal_base_service.return_value = HandlerResultDTO(
             success=True,
             data={"referralItems": referrals_json_data}
         )
 
-        # Создаем фильтр
         filter_params = DeceasedFilter(
-            date_from="2023-01-01",
-            date_to="2023-01-31",
-            patient_identifier="070210653849",
-            department="072"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            patient_identifier=TEST_PATIENT_IIN,
+            department=TEST_DEPARTMENT_CODE
         )
 
-        # Вызываем метод получения данных
         result = await DeceasedPatientsService.get_data(filter_params)
 
-        # Проверяем результат
-        assert result.hospital_name == "Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау"
+        assert result.hospital_name == HOSPITAL_NAME
         assert isinstance(result.items, list)
         assert result.page == filter_params.page
         assert result.limit == filter_params.limit
 
-        # Проверяем, что все элементы имеют правильный статус цвета
         for item in result.items:
             assert item.status_color == DeceasedStatusColor.RED
 
     @pytest.mark.asyncio
     async def test_get_data_empty(self, mock_journal_base_service):
         """Проверка получения пустого ответа при отсутствии данных."""
-        # Настраиваем мок для _get_bg_data
         mock_journal_base_service.return_value = HandlerResultDTO(
             success=False,
-            error="No data found",
-            status_code=404
+            error=ERROR_NO_DATA_FOUND,
+            status_code=HTTP_NOT_FOUND
         )
 
-        # Создаем фильтр
         filter_params = DeceasedFilter(
-            date_from="2023-01-01",
-            date_to="2023-01-31"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO
         )
 
-        # Вызываем метод получения данных
         result = await DeceasedPatientsService.get_data(filter_params)
 
-        # Проверяем результат
-        assert result.hospital_name == "Коммунальное государственное предприятие на праве хозяйственного ведения \"Областная многопрофильная больница города Жезказган\" управления здравоохранения области Улытау"
+        assert result.hospital_name == HOSPITAL_NAME
         assert result.items == []
         assert result.total == 0
         assert result.page == filter_params.page
@@ -73,55 +69,94 @@ class TestDeceasedPatientsService:
 
     def test_transform_data(self, referrals_json_data):
         """Проверка преобразования данных из БГ в формат умерших пациентов."""
-        # Добавляем признаки смерти для тестовых данных
         for item in referrals_json_data:
-            item["addiditonalInformation"] = "смерть пациента"
-            item["outDate"] = "2020-01-10T15:30:00"
+            item["addiditonalInformation"] = DEATH_MARKER
+            item["outDate"] = TEST_OUT_DATE
 
-        # Создаем фильтр
         filter_params = DeceasedFilter(
-            date_from="2020-01-01",
-            date_to="2020-01-31"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO
         )
 
-        # Вызываем метод преобразования данных
         result = DeceasedPatientsService._transform_data(
             {"referralItems": referrals_json_data},
             filter_params
         )
 
-        # Проверяем результат
-        assert result.hospital_name.startswith("Коммунальное государственное предприятие")
+        assert result.hospital_name == HOSPITAL_NAME
         assert isinstance(result.items, list)
 
-        # Если есть элементы, проверяем первый
         if result.items:
             item = result.items[0]
             assert hasattr(item, "id")
             assert hasattr(item, "patient")
             assert hasattr(item, "status_color")
             assert hasattr(item, "additional_info")
-            assert item.status_color == DeceasedStatusColor.RED  # Для умерших пациентов
+            assert item.status_color == DeceasedStatusColor.RED
 
-            # Проверяем, что в дополнительной информации есть данные о лечении и исходе
             assert "treatment_outcome" in item.additional_info
             assert "discharge_outcome" in item.additional_info
-            assert item.additional_info["treatment_outcome"] == "Смерть"
-            assert item.additional_info["discharge_outcome"] == "Умер"
+            assert item.additional_info["treatment_outcome"] == TreatmentOutcome.DEATH.value
+            assert item.additional_info["discharge_outcome"] == DischargeOutcome.DIED.value
+
+    def test_build_additional_info(self):
+        """Проверка построения дополнительной информации для актива."""
+        item = {
+            "sick": {
+                "code": TEST_SICK_CODE,
+                "name": TEST_SICK_NAME
+            },
+            "bedProfile": {
+                "code": TEST_DEPARTMENT_CODE
+            },
+            "directDoctor": TEST_DOCTOR_NAME,
+            "hospitalDate": TEST_REG_DATE,
+            "outDate": TEST_OUT_DATE
+        }
+
+        phone_number = TEST_PHONE_NUMBER
+        address = TEST_ADDRESS
+
+        additional_info = DeceasedPatientsService._build_additional_info(item, phone_number, address)
+
+        assert additional_info["phone"] == phone_number
+        assert additional_info["address"] == address
+        assert additional_info["treatment_outcome"] == TreatmentOutcome.DEATH.value
+        assert additional_info["discharge_outcome"] == DischargeOutcome.DIED.value
+        assert "hospitalization_period" in additional_info
+        assert additional_info["diagnosis"] == f"{TEST_SICK_CODE} {TEST_SICK_NAME}"
+        assert additional_info["specialist"] == TEST_DOCTOR_NAME
+        assert additional_info["department"] == f"№{TEST_DEPARTMENT_CODE}"
+
+    def test_has_death_markers(self):
+        """Проверка наличия маркеров смерти в записи."""
+        item_with_death_marker = {
+            "addiditonalInformation": DEATH_MARKER
+        }
+        assert DeceasedPatientsService._has_death_markers(item_with_death_marker)
+
+        item_with_out_date = {
+            "addiditonalInformation": "",
+            "outDate": TEST_OUT_DATE
+        }
+        assert DeceasedPatientsService._has_death_markers(item_with_out_date)
+
+        item_without_markers = {
+            "addiditonalInformation": "обычная информация"
+        }
+        assert not DeceasedPatientsService._has_death_markers(item_without_markers)
 
     def test_apply_filter(self, referrals_json_data):
         """Проверка применения фильтра к списку элементов."""
-        # Добавляем признаки смерти для тестовых данных
         for item in referrals_json_data:
-            item["addiditonalInformation"] = "смерть пациента"
-            item["outDate"] = "2025-01-10T00:00:00"
+            item["addiditonalInformation"] = DEATH_MARKER
+            item["outDate"] = TEST_OUT_DATE
 
-        # Создаем фильтр
         filter_params = DeceasedFilter(
-            date_from="2025-01-01",
-            date_to="2025-12-31",
-            patient_identifier="070210653849",
-            department="072"
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            patient_identifier=TEST_PATIENT_IIN,
+            department=TEST_DEPARTMENT_CODE
         )
 
         filtered_items = DeceasedPatientsService._apply_filter(
@@ -144,36 +179,22 @@ class TestDeceasedPatientsService:
                 department = item.get("bedProfile", {}).get("code", "")
                 assert department == filter_params.department
 
-            assert "смерть" in item.get("addiditonalInformation", "").lower() or item.get("outDate")
+            assert DEATH_MARKER.lower() in item.get("addiditonalInformation", "").lower() or item.get("outDate")
 
-    def test_format_period(self):
-        """Проверка форматирования периода госпитализации."""
-        period = DeceasedPatientsService._format_period(
-            "2025-01-01T00:00:00",
-            "2025-01-10T00:00:00"
+    def test_get_empty_response(self):
+        """Проверка получения пустого ответа."""
+        filter_params = DeceasedFilter(
+            date_from=TEST_DATE_FROM,
+            date_to=TEST_DATE_TO,
+            page=TEST_PAGE_NUMBER,
+            limit=TEST_PAGE_SIZE
         )
-        assert period == "С 01.01.2025 – По 10.01.2025"
 
-        period = DeceasedPatientsService._format_period(
-            "2025-01-01T00:00:00",
-            None
-        )
-        assert period == "С 01.01.2025"
+        result = DeceasedPatientsService._get_empty_response(filter_params)
 
-        period = DeceasedPatientsService._format_period(None, None)
-        assert period == ""
-
-    def test_calculate_age(self):
-        """Проверка расчета возраста на основе даты рождения."""
-        with patch('services.journal.deceased_patients_service.datetime') as mock_datetime:
-            mock_datetime.now.return_value = datetime(2025, 1, 1)
-            mock_datetime.strptime.side_effect = lambda *args, **kwargs: datetime.strptime(*args, **kwargs)
-
-            age = DeceasedPatientsService._calculate_age("2000-01-01T00:00:00")
-            assert age == 25
-
-            age = DeceasedPatientsService._calculate_age(None)
-            assert age == 0
-
-            age = DeceasedPatientsService._calculate_age("invalid-date")
-            assert age == 0
+        assert result.hospital_name == HOSPITAL_NAME
+        assert result.items == []
+        assert result.total == 0
+        assert result.page == TEST_PAGE_NUMBER
+        assert result.limit == TEST_PAGE_SIZE
+        assert result.total_pages == 0
